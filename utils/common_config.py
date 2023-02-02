@@ -44,7 +44,7 @@ def get_feature_dimensions_backbone(p):
 def get_model(p, pretrain_path=None):
     # Get backbone
     if p['backbone'] == 'resnet18':
-        if p['train_db_name'] in ['cifar-10', 'cifar-20']:
+        if p['train_db_name'] in ['uveye', 'cifar-10', 'cifar-20']:
             from models.resnet_cifar import resnet18
             backbone = resnet18()
 
@@ -120,7 +120,11 @@ def get_model(p, pretrain_path=None):
 def get_train_dataset(p, transform, to_augmented_dataset=False,
                         to_neighbors_dataset=False, split=None):
     # Base dataset
-    if p['train_db_name'] == 'cifar-10':
+    if p['train_db_name'] == 'uveye':
+        from data.uveye import UVEYE
+        dataset = UVEYE(train=True, transform=transform, download=True)
+
+    elif p['train_db_name'] == 'cifar-10':
         from data.cifar import CIFAR10
         dataset = CIFAR10(train=True, transform=transform, download=True)
 
@@ -157,9 +161,13 @@ def get_train_dataset(p, transform, to_augmented_dataset=False,
     return dataset
 
 
-def get_val_dataset(p, transform=None, to_neighbors_dataset=False):
+def get_val_dataset(p, transform=None, to_neighbors_dataset=False, test=False):
     # Base dataset
-    if p['val_db_name'] == 'cifar-10':
+    if p['val_db_name'] == 'uveye':
+        from data.uveye import UVEYE
+        dataset = UVEYE(train=False, transform=transform, test=test, download=True)
+
+    elif p['val_db_name'] == 'cifar-10':
         from data.cifar import CIFAR10
         dataset = CIFAR10(train=False, transform=transform, download=True)
     

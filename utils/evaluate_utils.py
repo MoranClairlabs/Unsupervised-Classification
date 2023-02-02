@@ -12,6 +12,7 @@ from sklearn import metrics
 from scipy.optimize import linear_sum_assignment
 from losses.losses import entropy
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 @torch.no_grad()
 def contrastive_evaluate(val_loader, model, memory_bank):
@@ -19,11 +20,30 @@ def contrastive_evaluate(val_loader, model, memory_bank):
     model.eval()
 
     for batch in val_loader:
-        images = batch['image'].cuda(non_blocking=True)
-        target = batch['target'].cuda(non_blocking=True)
+        images = batch['image'].to(device,non_blocking=True)
+        target = batch['target'].to(device,non_blocking=True)
 
         output = model(images)
         output = memory_bank.weighted_knn(output) 
+
+        acc1 = 100*torch.mean(torch.eq(output, target).float())
+        top1.update(acc1.item(), images.size(0))
+
+    return top1.avg
+
+@torch.no_grad()
+def contrastive_evaluate_balck_or_white(val_loader, model, memory_bank):
+    top1 = AverageMeter('Acc@1', ':6.2f')
+    model.eval()
+
+    for batch in val_loader:
+        images = batch['image'].to(device,non_blocking=True)
+        target = np.array(np.array(batch['black_or_white'])=='black', dtype=np.int)
+        target = torch.FloatTensor(target)
+        target = target.to(device,non_blocking=True)
+
+        output = model(images)
+        output = memory_bank.weighted_knn(output)
 
         acc1 = 100*torch.mean(torch.eq(output, target).float())
         top1.update(acc1.item(), images.size(0))
@@ -40,7 +60,7 @@ def get_predictions(p, dataloader, model, return_features=False):
     targets = []
     if return_features:
         ft_dim = get_feature_dimensions_backbone(p)
-        features = torch.zeros((len(dataloader.sampler), ft_dim)).cuda()
+        features = torch.zeros((len(dataloader.sampler), ft_dim)).to(device)
     
     if isinstance(dataloader.dataset, NeighborsDataset): # Also return the neighbors
         key_ = 'anchor'
@@ -53,7 +73,7 @@ def get_predictions(p, dataloader, model, return_features=False):
 
     ptr = 0
     for batch in dataloader:
-        images = batch[key_].cuda(non_blocking=True)
+        images = batch[key_].to(device,non_blocking=True)
         bs = images.shape[0]
         res = model(images, forward_pass='return_all')
         output = res['output']
@@ -128,14 +148,14 @@ def hungarian_evaluate(subhead_index, all_predictions, class_names=None,
 
     # Hungarian matching
     head = all_predictions[subhead_index]
-    targets = head['targets'].cuda()
-    predictions = head['predictions'].cuda()
-    probs = head['probabilities'].cuda()
+    targets = head['targets'].to(device)
+    predictions = head['predictions'].to(device)
+    probs = head['probabilities'].to(device)
     num_classes = torch.unique(targets).numel()
     num_elems = targets.size(0)
 
     match = _hungarian_match(predictions, targets, preds_k=num_classes, targets_k=num_classes)
-    reordered_preds = torch.zeros(num_elems, dtype=predictions.dtype).cuda()
+    reordered_preds = torch.zeros(num_elems, dtype=predictions.dtype).to(device)
     for pred_i, target_i in match:
         reordered_preds[predictions == int(pred_i)] = int(target_i)
 

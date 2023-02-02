@@ -34,7 +34,7 @@ def main():
     print('Model is {}'.format(model.__class__.__name__))
     print(model)
     model = torch.nn.DataParallel(model)
-    model = model.cuda()
+    model = model.to(device)
    
     
     # CUDNN
@@ -55,9 +55,9 @@ def main():
     # Memory Bank
     print(colored('Build MemoryBank', 'blue'))
     memory_bank_train = MemoryBank(len(train_dataset), 2048, p['num_classes'], p['temperature'])
-    memory_bank_train.cuda()
+    memory_bank_train.to(device)
     memory_bank_val = MemoryBank(len(val_dataset), 2048, p['num_classes'], p['temperature'])
-    memory_bank_val.cuda()
+    memory_bank_val.to(device)
 
     
     # Load the official MoCoV2 checkpoint

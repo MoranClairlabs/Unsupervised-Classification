@@ -12,6 +12,7 @@ class MemoryBank(object):
         self.dim = dim 
         self.features = torch.FloatTensor(self.n, self.dim)
         self.targets = torch.LongTensor(self.n)
+        self.black_or_white = torch.LongTensor(self.n)
         self.ptr = 0
         self.device = 'cpu'
         self.K = 100
@@ -79,6 +80,7 @@ class MemoryBank(object):
     def to(self, device):
         self.features = self.features.to(device)
         self.targets = self.targets.to(device)
+        self.black_or_white = self.black_or_white.to(device)
         self.device = device
 
     def cpu(self):

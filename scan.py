@@ -19,7 +19,7 @@ from utils.train_utils import scan_train
 FLAGS = argparse.ArgumentParser(description='SCAN Loss')
 FLAGS.add_argument('--config_env', help='Location of path config file')
 FLAGS.add_argument('--config_exp', help='Location of experiments config file')
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def main():
     args = FLAGS.parse_args()
     p = create_config(args.config_env, args.config_exp)
@@ -46,7 +46,7 @@ def main():
     model = get_model(p, p['pretext_model'])
     print(model)
     model = torch.nn.DataParallel(model)
-    model = model.cuda()
+    model = model.to(device)
 
     # Optimizer
     print(colored('Get optimizer', 'blue'))
@@ -60,7 +60,7 @@ def main():
     # Loss function
     print(colored('Get loss', 'blue'))
     criterion = get_criterion(p) 
-    criterion.cuda()
+    criterion.to(device)
     print(criterion)
 
     # Checkpoint

@@ -19,6 +19,7 @@ FLAGS.add_argument('--model', help='Location where model is saved')
 FLAGS.add_argument('--visualize_prototypes', action='store_true', 
                     help='Show the prototpye for each cluster')
 args = FLAGS.parse_args()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main():
     
@@ -55,7 +56,7 @@ def main():
         raise NotImplementedError
         
     # CUDA
-    model.cuda()
+    model.to(device)
 
     # Perform evaluation
     if config['setup'] in ['simclr', 'moco']:
@@ -68,7 +69,7 @@ def main():
         else: # Mine neighbors before MLP
             memory_bank = MemoryBank(len(dataset), config['model_kwargs']['features_dim'], 
                                     config['num_classes'], config['temperature'])
-        memory_bank.cuda()
+        memory_bank.to(device)
 
         print('Fill Memory Bank')
         fill_memory_bank(dataloader, model, memory_bank)

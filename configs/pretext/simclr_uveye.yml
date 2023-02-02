@@ -5,12 +5,12 @@ setup: simclr
 backbone: resnet18
 model_kwargs:
    head: mlp
-   features_dim: 128
+   features_dim: 32
 
 # Dataset
-train_db_name: cifar-20
-val_db_name: cifar-20
-num_classes: 20
+train_db_name: uveye
+val_db_name: uveye
+num_classes: 4
 
 # Loss
 criterion: simclr
@@ -18,17 +18,17 @@ criterion_kwargs:
    temperature: 0.1 
 
 # Hyperparameters
-epochs: 500
+epochs: 100
 optimizer: sgd
 optimizer_kwargs:
    nesterov: False
-   weight_decay: 0.0001 
+   weight_decay: 0.0001
    momentum: 0.9
    lr: 0.4
 scheduler: cosine
 scheduler_kwargs:
    lr_decay_rate: 0.1
-batch_size: 512 
+batch_size: 16
 num_workers: 8
 
 # Transformations
@@ -47,11 +47,11 @@ augmentation_kwargs:
    random_grayscale: 
       p: 0.2
    normalize:
-      mean: [0.5071, 0.4867, 0.4408]
-      std: [0.2675, 0.2565, 0.2761]
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2023, 0.1994, 0.2010]
 
 transformation_kwargs:
    crop_size: 32
    normalize:
-      mean: [0.5071, 0.4867, 0.4408]
-      std: [0.2675, 0.2565, 0.2761]
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2023, 0.1994, 0.2010]

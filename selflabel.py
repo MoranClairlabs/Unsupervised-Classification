@@ -24,7 +24,7 @@ parser.add_argument('--config_env',
 parser.add_argument('--config_exp',
                     help='Config file for the experiment')
 args = parser.parse_args()
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def main():
     # Retrieve config file
     p = create_config(args.config_env, args.config_exp)
@@ -35,12 +35,12 @@ def main():
     model = get_model(p, p['scan_model'])
     print(model)
     model = torch.nn.DataParallel(model)
-    model = model.cuda()
+    model = model.to(device)
 
     # Get criterion
     print(colored('Get loss', 'blue'))
     criterion = get_criterion(p)
-    criterion.cuda()
+    criterion.to(device)
     print(criterion)
 
     # CUDNN

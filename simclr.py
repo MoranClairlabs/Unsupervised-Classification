@@ -13,7 +13,7 @@ from utils.common_config import get_criterion, get_model, get_train_dataset,\
                                 get_val_dataloader, get_train_transformations,\
                                 get_val_transformations, get_optimizer,\
                                 adjust_learning_rate
-from utils.evaluate_utils import contrastive_evaluate
+from utils.evaluate_utils import contrastive_evaluate, contrastive_evaluate_balck_or_white
 from utils.memory import MemoryBank
 from utils.train_utils import simclr_train
 from utils.utils import fill_memory_bank
@@ -28,6 +28,7 @@ parser.add_argument('--config_exp',
 args = parser.parse_args()
 
 def main():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Retrieve config file
     p = create_config(args.config_env, args.config_exp)
@@ -39,7 +40,7 @@ def main():
     print('Model is {}'.format(model.__class__.__name__))
     print('Model parameters: {:.2f}M'.format(sum(p.numel() for p in model.parameters()) / 1e6))
     print(model)
-    model = model.cuda()
+    model = model.to(device)
    
     # CUDNN
     print(colored('Set CuDNN benchmark', 'blue')) 
@@ -65,17 +66,17 @@ def main():
     memory_bank_base = MemoryBank(len(base_dataset), 
                                 p['model_kwargs']['features_dim'],
                                 p['num_classes'], p['criterion_kwargs']['temperature'])
-    memory_bank_base.cuda()
+    memory_bank_base.to(device)
     memory_bank_val = MemoryBank(len(val_dataset),
                                 p['model_kwargs']['features_dim'],
                                 p['num_classes'], p['criterion_kwargs']['temperature'])
-    memory_bank_val.cuda()
+    memory_bank_val.to(device)
 
     # Criterion
     print(colored('Retrieve criterion', 'blue'))
     criterion = get_criterion(p)
     print('Criterion is {}'.format(criterion.__class__.__name__))
-    criterion = criterion.cuda()
+    criterion = criterion.to(device)
 
     # Optimizer and scheduler
     print(colored('Retrieve optimizer', 'blue'))
@@ -88,13 +89,13 @@ def main():
         checkpoint = torch.load(p['pretext_checkpoint'], map_location='cpu')
         optimizer.load_state_dict(checkpoint['optimizer'])
         model.load_state_dict(checkpoint['model'])
-        model.cuda()
+        model.to(device)
         start_epoch = checkpoint['epoch']
 
     else:
         print(colored('No checkpoint file at {}'.format(p['pretext_checkpoint']), 'blue'))
         start_epoch = 0
-        model = model.cuda()
+        model = model.to(device)
     
     # Training
     print(colored('Starting main loop', 'blue'))
@@ -110,18 +111,18 @@ def main():
         print('Train ...')
         simclr_train(train_dataloader, model, criterion, optimizer, epoch)
 
-        # Fill memory bank
+        #Fill memory bank
         print('Fill memory bank for kNN...')
         fill_memory_bank(base_dataloader, model, memory_bank_base)
 
         # Evaluate (To monitor progress - Not for validation)
         print('Evaluate ...')
-        top1 = contrastive_evaluate(val_dataloader, model, memory_bank_base)
-        print('Result of kNN evaluation is %.2f' %(top1)) 
-        
+        top1 = contrastive_evaluate_balck_or_white(val_dataloader, model, memory_bank_base)
+        print('Result of kNN evaluation is %.2f' %(top1))
+
         # Checkpoint
         print('Checkpoint ...')
-        torch.save({'optimizer': optimizer.state_dict(), 'model': model.state_dict(), 
+        torch.save({'optimizer': optimizer.state_dict(), 'model': model.state_dict(),
                     'epoch': epoch + 1}, p['pretext_checkpoint'])
 
     # Save final model

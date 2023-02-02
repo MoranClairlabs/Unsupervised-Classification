@@ -38,7 +38,7 @@ def main():
     print('Model is {}'.format(model.__class__.__name__))
     print('Model parameters: {:.2f}M'.format(sum(p.numel() for p in model.parameters()) / 1e6))
     print(model)
-    model = model.cuda()
+    model = model.to(device)
    
     # CUDNN
     print(colored('Set CuDNN benchmark', 'blue')) 
@@ -58,18 +58,18 @@ def main():
     memory_bank_base = MemoryBank(len(base_dataset), 
                                 p['model_kwargs']['features_dim'],
                                 p['num_classes'], p['criterion_kwargs']['temperature'])
-    memory_bank_base.cuda()
+    memory_bank_base.to(device)
     memory_bank_val = MemoryBank(len(val_dataset),
                                 p['model_kwargs']['features_dim'],
                                 p['num_classes'], p['criterion_kwargs']['temperature'])
-    memory_bank_val.cuda()
+    memory_bank_val.to(device)
 
     # Checkpoint
     assert os.path.exists(p['pretext_checkpoint'])
     print(colored('Restart from checkpoint {}'.format(p['pretext_checkpoint']), 'blue'))
     checkpoint = torch.load(p['pretext_checkpoint'], map_location='cpu')
     model.load_state_dict(checkpoint)
-    model.cuda()
+    model.to(device)
     
     # Save model
     torch.save(model.state_dict(), p['pretext_model'])

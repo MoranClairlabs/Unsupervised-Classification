@@ -8,11 +8,13 @@ import os
 class MyPath(object):
     @staticmethod
     def db_root_dir(database=''):
-        db_names = {'cifar-10', 'stl-10', 'cifar-20', 'imagenet', 'imagenet_50', 'imagenet_100', 'imagenet_200'}
+        db_names = {'uveye', 'cifar-10', 'stl-10', 'cifar-20', 'imagenet', 'imagenet_50', 'imagenet_100', 'imagenet_200'}
         assert(database in db_names)
+        if database == 'uveye':
+            return '/Users/moranovadia/Clair Labs Dropbox/Moran Ovadia/code/UVeye/Unsupervised-Classification/data/uveye/'
 
         if database == 'cifar-10':
-            return '/path/to/cifar-10/'
+            return '/Users/moranovadia/Clair Labs Dropbox/Moran Ovadia/code/UVeye/Unsupervised-Classification/data/cifar-10/'
         
         elif database == 'cifar-20':
             return '/path/to/cifar-20/'
