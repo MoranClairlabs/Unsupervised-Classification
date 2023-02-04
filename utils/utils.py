@@ -86,7 +86,10 @@ def confusion_matrix(predictions, gt, class_names, output_file=None):
     
     for (i, j), z in np.ndenumerate(confusion_matrix):
         if i == j:
-            axes.text(j, i, '%d' %(100*z), ha='center', va='center', color='white', fontsize=6)
+            try:
+              axes.text(j, i, '%d' %(100*z), ha='center', va='center', color='white', fontsize=6)
+            except:
+              import pdb; pdb.set_trace()
         else:
             pass
 

@@ -7,7 +7,7 @@ import torch
 import yaml
 from termcolor import colored
 from utils.common_config import get_val_dataset, get_val_transformations, get_val_dataloader,\
-                                get_model
+                                get_model, get_test_dataset
 from utils.evaluate_utils import get_predictions, hungarian_evaluate
 from utils.memory import MemoryBank 
 from utils.utils import fill_memory_bank
@@ -33,7 +33,7 @@ def main():
     # Get dataset
     print(colored('Get validation dataset ...', 'blue'))
     transforms = get_val_transformations(config)
-    dataset = get_val_dataset(config, transforms)
+    dataset = get_test_dataset(config, transforms)
     dataloader = get_val_dataloader(config, dataset)
     print('Number of samples: {}'.format(len(dataset)))
 
@@ -84,8 +84,9 @@ def main():
         print(colored('Perform evaluation of the clustering model (setup={}).'.format(config['setup']), 'blue'))
         head = state_dict['head'] if config['setup'] == 'scan' else 0
         predictions, features = get_predictions(config, dataloader, model, return_features=True)
+        import pdb; pdb.set_trace()
         clustering_stats = hungarian_evaluate(head, predictions, dataset.classes, 
-                                                compute_confusion_matrix=True)
+                                                compute_confusion_matrix=True, confusion_matrix_file='confusion_matrix.png')
         print(clustering_stats)
         if args.visualize_prototypes:
             prototype_indices = get_prototypes(config, predictions[head], features, model)
@@ -139,7 +140,7 @@ def visualize_indices(indices, dataset, hungarian_match):
         plt.figure()
         plt.axis('off')
         plt.imshow(img)
-        plt.show()
+        plt.savefig('/content/drive/MyDrive/Unsupervised-Classification/results/uveye/scan/'+str(idx)+'.png')
 
 
 if __name__ == "__main__":

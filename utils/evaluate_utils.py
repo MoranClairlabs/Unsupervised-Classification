@@ -31,25 +31,6 @@ def contrastive_evaluate(val_loader, model, memory_bank):
 
     return top1.avg
 
-@torch.no_grad()
-def contrastive_evaluate_balck_or_white(val_loader, model, memory_bank):
-    top1 = AverageMeter('Acc@1', ':6.2f')
-    model.eval()
-
-    for batch in val_loader:
-        images = batch['image'].to(device,non_blocking=True)
-        target = np.array(np.array(batch['black_or_white'])=='black', dtype=np.int)
-        target = torch.FloatTensor(target)
-        target = target.to(device,non_blocking=True)
-
-        output = model(images)
-        output = memory_bank.weighted_knn(output)
-
-        acc1 = 100*torch.mean(torch.eq(output, target).float())
-        top1.update(acc1.item(), images.size(0))
-
-    return top1.avg
-
 
 @torch.no_grad()
 def get_predictions(p, dataloader, model, return_features=False):
@@ -164,7 +145,7 @@ def hungarian_evaluate(subhead_index, all_predictions, class_names=None,
     nmi = metrics.normalized_mutual_info_score(targets.cpu().numpy(), predictions.cpu().numpy())
     ari = metrics.adjusted_rand_score(targets.cpu().numpy(), predictions.cpu().numpy())
     
-    _, preds_top5 = probs.topk(5, 1, largest=True)
+    _, preds_top5 = probs.topk(4, 1, largest=True)
     reordered_preds_top5 = torch.zeros_like(preds_top5)
     for pred_i, target_i in match:
         reordered_preds_top5[preds_top5 == int(pred_i)] = int(target_i)

@@ -4,7 +4,7 @@ Licensed under the CC BY-NC 4.0 license (https://creativecommons.org/licenses/by
 """
 import numpy as np
 import torch
-
+from sklearn.neighbors import NearestNeighbors
 
 class MemoryBank(object):
     def __init__(self, n, dim, num_classes, temperature):
@@ -45,6 +45,21 @@ class MemoryBank(object):
         return class_pred
 
     def mine_nearest_neighbors(self, topk, calculate_accuracy=True):
+        # mine the topk nearest neighbors for every sample
+        features = self.features.cpu().numpy()
+        nbrs = NearestNeighbors(n_neighbors=self.K, algorithm='ball_tree').fit(features)
+        distances, indices = nbrs.kneighbors(features)
+        if calculate_accuracy:
+            targets = self.targets.cpu().numpy()
+            neighbor_targets = np.take(targets, indices[:, 1:], axis=0)  # Exclude sample itself for eval
+            anchor_targets = np.repeat(targets.reshape(-1, 1), topk, axis=1)
+            accuracy = np.mean(neighbor_targets == anchor_targets)
+            return indices, accuracy
+
+        else:
+            return indices
+
+    def mine_nearest_neighbors2(self, topk, calculate_accuracy=True):
         # mine the topk nearest neighbors for every sample
         import faiss
         features = self.features.cpu().numpy()

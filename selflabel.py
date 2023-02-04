@@ -11,7 +11,7 @@ from utils.common_config import get_train_dataset, get_train_transformations,\
                                 get_val_dataset, get_val_transformations,\
                                 get_train_dataloader, get_val_dataloader,\
                                 get_optimizer, get_model, adjust_learning_rate,\
-                                get_criterion
+                                get_criterion, get_test_dataset
 from utils.ema import EMA
 from utils.evaluate_utils import get_predictions, hungarian_evaluate
 from utils.train_utils import selflabel_train
@@ -65,6 +65,9 @@ def main():
     val_dataloader = get_val_dataloader(p, val_dataset)
     print(colored('Train samples %d - Val samples %d' %(len(train_dataset), len(val_dataset)), 'yellow'))
 
+    test_dataset = get_test_dataset(p, val_transforms) 
+    test_dataloader = get_val_dataloader(p, test_dataset)
+
     # Checkpoint
     if os.path.exists(p['selflabel_checkpoint']):
         print(colored('Restart from checkpoint {}'.format(p['selflabel_checkpoint']), 'blue'))
@@ -98,11 +101,11 @@ def main():
         print('Train ...')
         selflabel_train(train_dataloader, model, criterion, optimizer, epoch, ema=ema)
 
-        # Evaluate (To monitor progress - Not for validation)
-        print('Evaluate ...')
-        predictions = get_predictions(p, val_dataloader, model)
-        clustering_stats = hungarian_evaluate(0, predictions, compute_confusion_matrix=False) 
-        print(clustering_stats)
+        # # Evaluate (To monitor progress - Not for validation)
+        # print('Evaluate ...')
+        # predictions = get_predictions(p, val_dataloader, model)
+        # clustering_stats = hungarian_evaluate(0, predictions, compute_confusion_matrix=False) 
+        # print(clustering_stats)
         
         # Checkpoint
         print('Checkpoint ...')
@@ -112,9 +115,22 @@ def main():
     
     # Evaluate and save the final model
     print(colored('Evaluate model at the end', 'blue'))
-    predictions = get_predictions(p, val_dataloader, model)
-    clustering_stats = hungarian_evaluate(0, predictions, 
-                                class_names=val_dataset.classes,
+    import pdb; pdb.set_trace()
+    predictions_train = get_predictions(p, train_dataloader, model)
+    class_1 = torch.sum(predictions_train[0]['predictions']==0)
+    class_2 = torch.sum(predictions_train[0]['predictions']==1)
+    class_3 = torch.sum(predictions_train[0]['predictions']==2)
+    class_4 = torch.sum(predictions_train[0]['predictions']==3)
+    all_c = class_1 + class_2 + class_3 + class_4
+
+    print("class 0, metal_nut ,percent", class_1/all_c)
+    print("class 1 , pill , percent", class_2/all_c)
+    print("class 2 , cpsule, percent", class_3/all_c)
+    print("class 3 , screw, percent", class_4/all_c)
+
+    predictions_test = get_predictions(p, test_dataloader, model)
+    clustering_stats = hungarian_evaluate(0, predictions_test, 
+                                class_names=test_dataset.classes,
                                 compute_confusion_matrix=True,
                                 confusion_matrix_file=os.path.join(p['selflabel_dir'], 'confusion_matrix.png'))
     print(clustering_stats)

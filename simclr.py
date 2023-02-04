@@ -13,7 +13,7 @@ from utils.common_config import get_criterion, get_model, get_train_dataset,\
                                 get_val_dataloader, get_train_transformations,\
                                 get_val_transformations, get_optimizer,\
                                 adjust_learning_rate
-from utils.evaluate_utils import contrastive_evaluate, contrastive_evaluate_balck_or_white
+from utils.evaluate_utils import contrastive_evaluate
 from utils.memory import MemoryBank
 from utils.train_utils import simclr_train
 from utils.utils import fill_memory_bank
@@ -115,11 +115,6 @@ def main():
         print('Fill memory bank for kNN...')
         fill_memory_bank(base_dataloader, model, memory_bank_base)
 
-        # Evaluate (To monitor progress - Not for validation)
-        print('Evaluate ...')
-        top1 = contrastive_evaluate_balck_or_white(val_dataloader, model, memory_bank_base)
-        print('Result of kNN evaluation is %.2f' %(top1))
-
         # Checkpoint
         print('Checkpoint ...')
         torch.save({'optimizer': optimizer.state_dict(), 'model': model.state_dict(),
@@ -134,6 +129,30 @@ def main():
     fill_memory_bank(base_dataloader, model, memory_bank_base)
     topk = 20
     print('Mine the nearest neighbors (Top-%d)' %(topk)) 
+
+    # evaluate val dataset - check for over fitting
+    from matplotlib import pyplot as plt
+    from sklearn.decomposition import PCA
+    model.eval()
+    pca = PCA(n_components=2)
+    colors = ['b', 'r']
+    for i,batch in enumerate (base_dataloader):
+      images = batch['image'].to(device,non_blocking=True)
+      targets = batch['target'].to(device,non_blocking=True)
+      features = model(images)
+      features = features.detach().numpy()
+      targets = targets.detach().numpy()
+      if i==0:
+        targets_bw = targets
+        all_features = features
+      else:
+        targets_bw = np.concatenate([targets_bw, targets])
+        all_features = np.concatenate([all_features,features])
+    components = pca.fit_transform(all_features)
+    for ind,comp in enumerate(components):
+      plt.scatter(comp[0], comp[1], c=colors[int(targets_bw[ind])])
+    plt.savefig('/content/drive/MyDrive/Unsupervised-Classification/results/uveye/1.png')
+
     indices, acc = memory_bank_base.mine_nearest_neighbors(topk)
     print('Accuracy of top-%d nearest neighbors on train set is %.2f' %(topk, 100*acc))
     np.save(p['topk_neighbors_train_path'], indices)   

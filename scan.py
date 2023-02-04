@@ -115,9 +115,9 @@ def main():
             print('No new lowest loss on validation set: %.4f -> %.4f' %(best_loss, lowest_loss))
             print('Lowest loss head is %d' %(best_loss_head))
 
-        print('Evaluate with hungarian matching algorithm ...')
-        clustering_stats = hungarian_evaluate(lowest_loss_head, predictions, compute_confusion_matrix=False)
-        print(clustering_stats)     
+        # print('Evaluate with hungarian matching algorithm ...')
+        # clustering_stats = hungarian_evaluate(lowest_loss_head, predictions, compute_confusion_matrix=False)
+        # print(clustering_stats)     
 
         # Checkpoint
         print('Checkpoint ...')
@@ -129,12 +129,25 @@ def main():
     print(colored('Evaluate best model based on SCAN metric at the end', 'blue'))
     model_checkpoint = torch.load(p['scan_model'], map_location='cpu')
     model.module.load_state_dict(model_checkpoint['model'])
+    predictions_train = get_predictions(p, train_dataloader, model)
+    class_0 = torch.sum(predictions_train[0]['predictions']==0)
+    class_1 = torch.sum(predictions_train[0]['predictions']==1)
+    class_2 = torch.sum(predictions_train[0]['predictions']==2)
+    class_3 = torch.sum(predictions_train[0]['predictions']==3)
+    all_c = class_0 + class_1 + class_2 + class_3 
+
+    print("class 0 precent", class_0/all_c)
+    print("class 1 precent", class_1/all_c)
+    print("class 2 precent", class_2/all_c)
+    print("class 3 precent", class_3/all_c)
+        
     predictions = get_predictions(p, val_dataloader, model)
-    clustering_stats = hungarian_evaluate(model_checkpoint['head'], predictions, 
-                            class_names=val_dataset.dataset.classes, 
-                            compute_confusion_matrix=True, 
-                            confusion_matrix_file=os.path.join(p['scan_dir'], 'confusion_matrix.png'))
-    print(clustering_stats)         
+    print(predictions)
+    # clustering_stats = hungarian_evaluate(model_checkpoint['head'], predictions, 
+    #                         class_names=val_dataset.dataset.classes, 
+    #                         compute_confusion_matrix=True, 
+    #                         confusion_matrix_file=os.path.join(p['scan_dir'], 'confusion_matrix.png'))
+    # print(clustering_stats)         
     
 if __name__ == "__main__":
     main()
